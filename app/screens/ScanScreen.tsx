@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
 
@@ -15,7 +16,7 @@ export default function ScanScreen({ navigation }: Props) {
       <Text style={styles.title}>ScanIQ</Text>
       <Button
         title="Go to Favourites"
-        onPress={() => navigation.navigate("favourites")}
+        onPress={() => router.push("/favourites")}
       />
     </View>
   );
