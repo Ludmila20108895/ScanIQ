@@ -1,10 +1,11 @@
+// app/(tabs)/index.tsx
 import React from "react";
-import ScanScreen, { Navigation } from "../screens/ScanScreen";
+import { Text, View } from "react-native";
 
-export default function Home() {
-  const dummyNavigation: Navigation = {
-    navigate: (_screen: string) => {},
-  };
-
-  return <ScanScreen navigation={dummyNavigation} />;
+export default function TabsHome() {
+  return (
+    <View>
+      <Text>Tabs template (not used)</Text>
+    </View>
+  );
 }
