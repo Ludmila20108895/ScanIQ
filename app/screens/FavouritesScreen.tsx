@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { getFavourites } from "../favouritesStores";
+import { getFavourites } from "../../favouritesStore";
 
 const HISTORY_ITEMS = [
   {

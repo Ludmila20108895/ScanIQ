@@ -1,6 +1,13 @@
+// app/screens/ScanScreen.tsx
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+
+import {
+  BarcodeScanningResult,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 
 const SAMPLE_SCANS = [
   { id: "1", name: "Milk (1L)" },
@@ -8,8 +15,81 @@ const SAMPLE_SCANS = [
   { id: "3", name: "Cheddar Cheese" },
 ];
 
+// This screen shows a simulated scan result and health score
 export default function ScanScreen() {
-  const [lastScan] = useState(SAMPLE_SCANS[1]); // Simulate last scanned item
+  const [permission, requestPermission] = useCameraPermissions(); // handle camera permissions
+  const [scanned, setScanned] = useState(false); // track if a scan has been made to prevent multiple scans
+
+  const [lastScan, setLastScan] = useState(SAMPLE_SCANS[1]); // demo last scanned item
+  const [score, setScore] = useState(75); // demo health score
+
+  useEffect(() => {
+    // request camera permissions on mount
+    if (!permission) {
+      requestPermission(); // ask for permission if we don't have it yet
+    }
+  }, [permission, requestPermission]); // only run on mount and when permission state changes
+
+  const getScoreLabel = (value: number) => {
+    if (value <= 25) return "Bad";
+    if (value <= 50) return "Poor";
+    if (value <= 75) return "Good";
+    return "Excellent";
+  };
+
+  const getScoreMessage = (value: number) => {
+    // provide a user-friendly message based on the score
+    if (value <= 25) {
+      return "This product is not a healthy choice.";
+    }
+    if (value <= 50) {
+      return "This product is rated as poor and should be consumed only occasionally.";
+    }
+    if (value <= 75) {
+      return "This product is a good choice! It contains essential nutrients and has a balanced profile.";
+    }
+    return "This product has an excellent score and is a very good choice overall.";
+  };
+
+  const handleBarCodeScanned = (result: BarcodeScanningResult) => {
+    // handle the barcode scanning result
+    if (scanned) return; // prevent multiple scans
+    setScanned(true); // mark as scanned to prevent further scans until we reset
+
+    const data = result.data ?? ""; // get the scanned data (barcode value)
+
+    if (data.length % 3 === 0) {
+      // simulate different scan results based on the length of the scanned data
+      setLastScan(SAMPLE_SCANS[0]); // set the last scanned item to the first sample item
+      setScore(22); // set a low score for this item
+    } else if (data.length % 3 === 1) {
+      // set the last scanned item to the second sample item and a medium score
+      setLastScan(SAMPLE_SCANS[1]); // set the last scanned item to the second sample item
+      setScore(58); // set a medium score for this item
+    } else {
+      setLastScan(SAMPLE_SCANS[2]); // set the last scanned item to the third sample item
+      setScore(82); // set a high score for this item
+    }
+  };
+
+  if (!permission) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: "#888888" }}>Checking camera permissions...</Text>
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: "#888888", marginBottom: 12 }}>
+          Camera access is required to scan products.{" "}
+        </Text>
+        <Button title="Grant Camera Access" onPress={requestPermission} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -19,21 +99,28 @@ export default function ScanScreen() {
         <Text style={styles.subtitle}>Scan a barcode to get started</Text>
       </View>
 
-      {/* camera preview would go here */}
+      {/* Live camera view  */}
       <View style={styles.cameraBox}>
-        <Text style={styles.cameraText}>[Camera Preview]</Text>
+        <CameraView
+          style={{ flex: 1, width: "100%" }}
+          facing="back"
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          barcodeScannerSettings={{
+            barcodeTypes: ["ean13", "ean8", "upc_a", "qr"],
+          }}
+        />
       </View>
 
-      {/* Simulated last scanned item with favourite toggle */}
+      {/* Last scanned item result card */}
       <View style={styles.resultCard}>
-        <Text style={styles.resultLabel}>Last Scanned Item:</Text>
+        <Text style={styles.resultLabel}>Last scanned item:</Text>
         <Text style={styles.productName}>{lastScan.name}</Text>
 
-        <Text style={styles.scoreLabel}>Health Score: 75% (example)</Text>
-        <Text style={styles.resultMessage}>
-          This product is a good choice! It contains essential nutrients and has
-          a balanced profile.
+        <Text style={styles.scoreLabel}>
+          Health Score: {score}% ({getScoreLabel(score)})
         </Text>
+
+        <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
 
         <View style={styles.buttonsRow}>
           <Button
@@ -45,6 +132,7 @@ export default function ScanScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
