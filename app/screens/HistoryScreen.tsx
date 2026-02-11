@@ -1,85 +1,84 @@
-import React, { useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
-import { getFavourites, toggleFavourite } from "../../favouritesStore";
-
-const HISTORY_ITEMS = [
-  {
-    id: "1",
-    name: "Product A",
-    brand: "Brand X",
-    score: 85,
-    level: "good",
-  },
-];
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { getHistory, HistoryItem } from "../../historyStore";
 
 export default function HistoryScreen() {
-  const item = HISTORY_ITEMS[0]; // Simulate fetching the most recent history item
+  const [history, setHistory] = useState<HistoryItem[]>([]); // State to hold history items
 
-  const [favourites, setFavourites] = useState<string[]>(getFavourites());
+  useEffect(() => {
+    setHistory(getHistory()); // Load history items on component mount
+  }, []); // Empty dependency array to run only once on mount
 
-  const isFavourite = favourites.includes(item.id);
-
-  const onToggleFavourites = () => {
-    toggleFavourite(item.id);
-    setFavourites(getFavourites());
-  };
+  if (history.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No history items yet</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* product title and details */}
-      <View style={styles.headerCard}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productBrand}>{item.brand}</Text>
+    <ScrollView contentContainerStyle={styles.listContainer}>
+      {history.map((item) => (
+        <Pressable
+          key={item.id}
+          style={styles.row}
+          onPress={() => {
+            // @ts-expect-error dynamic route string is valid at runtime
+            router.push("/product/" + item.id);
+          }}
+        >
+          <View
+            style={[
+              styles.colourDot,
+              { backgroundColor: colourForLevel(item.level) },
+            ]}
+          />
 
-        <Text style={styles.scoreLabel}>Score: {item.score}</Text>
-        <Text style={styles.resultMessage}>
-          This product is a {item.level} choice based on its nutritional
-          profile.
-        </Text>
-      </View>
-
-      {/* Example sections: ingredients, nutrition facts, etc. */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}> Negative Ingredients</Text>
-        <Text style={styles.sectionLine}>- Salt...</Text>
-        <Text style={styles.sectionLine}>- Sugar...</Text>
-        <Text style={styles.sectionLine}>- Energy ...</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}> Positive Ingredients</Text>
-        <Text style={styles.sectionLine}>- Fiber...</Text>
-        <Text style={styles.sectionLine}>- Protein...</Text>
-        <Text style={styles.sectionLine}>- Vitamins...</Text>
-      </View>
-
-      {/* Recomendations placeholder */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommendations</Text>
-        <Text style={styles.sectionLine}>
-          This product rate is good based on its nutritional profile. Consider
-          adding more fiber to your diet.
-        </Text>
-      </View>
-
-      {/* Add to favourites button */}
-      <View style={styles.bottomActions}>
-        <Button
-          title={isFavourite ? "Remove from Favourites" : "Add to Favourites"}
-          onPress={onToggleFavourites}
-        />
-      </View>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowName}>{item.name}</Text>
+            <Text style={styles.rowScore}>{item.score}%</Text>
+          </View>
+        </Pressable>
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
-    paddingTop: 16,
+  listContainer: { padding: 16 },
+  row: {
+    flexDirection: "row",
+    borderRadius: 12,
+    backgroundColor: "#f9fafb",
+    marginBottom: 8,
+    overflow: "hidden",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
+  colourDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    marginRight: 12,
+    marginTop: 10,
+  },
+  rowContent: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  rowName: { fontSize: 16, fontWeight: "600" },
+  rowScore: { fontSize: 16, color: "#6b5563" },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: { color: "#6b7280" },
+
   headerCard: {
     padding: 16,
     borderRadius: 16,
@@ -98,7 +97,7 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "bold",
     color: "#111827",
     marginBottom: 8,
   },
@@ -126,3 +125,15 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
 });
+const colourForLevel = (level: HistoryItem["level"]) => {
+  switch (level) {
+    case "bad":
+      return "#ef4444"; // red
+    case "poor":
+      return "#f97316"; // orange
+    case "good":
+      return "#22c55e"; // green
+    case "excellent":
+      return "#16a34a"; // darker green
+  }
+};
