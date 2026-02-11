@@ -1,7 +1,7 @@
-// app/screens/ScanScreen.tsx
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+import { addToHistory } from "../../historyStore";
 
 import {
   BarcodeScanningResult,
@@ -58,18 +58,32 @@ export default function ScanScreen() {
 
     const data = result.data ?? ""; // get the scanned data (barcode value)
 
+    let item = SAMPLE_SCANS[1];
+    let newScore = 75;
+    let level: "bad" | "poor" | "good" | "excellent" = "good";
+
     if (data.length % 3 === 0) {
       // simulate different scan results based on the length of the scanned data
-      setLastScan(SAMPLE_SCANS[0]); // set the last scanned item to the first sample item
-      setScore(22); // set a low score for this item
+      item = SAMPLE_SCANS[0]; // set the last scanned item to the first sample item
+      newScore = 22; // set a low score for this item
+      level = "bad";
     } else if (data.length % 3 === 1) {
       // set the last scanned item to the second sample item and a medium score
-      setLastScan(SAMPLE_SCANS[1]); // set the last scanned item to the second sample item
-      setScore(58); // set a medium score for this item
+      item = SAMPLE_SCANS[1]; // set the last scanned item to the second sample item
+      newScore = 58; // set a medium score for this item
     } else {
-      setLastScan(SAMPLE_SCANS[2]); // set the last scanned item to the third sample item
-      setScore(82); // set a high score for this item
+      item = SAMPLE_SCANS[2]; // set the last scanned item to the third sample item
+      newScore = 82; // set a high score for this item
+      level = "excellent";
     }
+    setLastScan(item); // update the last scanned item state
+    setScore(newScore); // update the score state
+    addToHistory({
+      id: item.id,
+      name: item.name,
+      score: newScore,
+      level,
+    }); // add the scanned item to history with its score and level
   };
 
   if (!permission) {
