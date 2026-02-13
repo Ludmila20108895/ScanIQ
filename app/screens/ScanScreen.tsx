@@ -31,8 +31,11 @@ export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions(); // handle camera permissions
   const [scanned, setScanned] = useState(false); // track if a scan has been made to prevent multiple scans
 
-  const [lastScan, setLastScan] = useState(SAMPLE_SCANS[1]); // demo last scanned item
+  const [lastScan, setLastScan] = useState<
+    (typeof SAMPLE_SCANS)[number] | null
+  >(null); // demo last scanned item
   const [score, setScore] = useState(75); // demo health score
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // state for error messages
 
   useEffect(() => {
     // request camera permissions on mount
@@ -68,6 +71,15 @@ export default function ScanScreen() {
     setScanned(true); // mark as scanned to prevent further scans until we reset
 
     const data = result.data ?? ""; // get the scanned data (barcode value)
+
+    if (data.length < 5) {
+      // simple validation to simulate product not found for short/invalid barcodes
+      setErrorMessage("Product not found");
+      setLastScan(null); // clear last scan info on error
+      return; //
+    }
+
+    setErrorMessage(null); // clear previous errors
 
     let item = SAMPLE_SCANS[1];
     let newScore = 75;
@@ -142,10 +154,10 @@ export default function ScanScreen() {
       {/* Header with app title and subtitle */}
       <View style={styles.header}>
         <Text style={styles.appTitle}>ScanIQ</Text>
-        <Text style={styles.subtitle}>Scan a barcode to get started</Text>
+        <Text style={styles.subtitle}>Scan the barcode to get started</Text>
       </View>
 
-      {/* Live camera view  */}
+      {/* Live camera card */}
       <View style={styles.cameraBox}>
         <CameraView
           style={{ flex: 1, width: "100%" }}
@@ -157,22 +169,71 @@ export default function ScanScreen() {
         />
       </View>
 
-      {/* Last scanned item result card */}
+      {/* result card */}
       <Pressable
         style={styles.resultCard}
         onPress={() => {
+          if (!lastScan) return; // safety check
           //@ts-expect-error dynamic route string is valid at runtime
           router.push("/product/" + lastScan.id);
         }}
       >
-        <Text style={styles.productName}>{lastScan.name}</Text>
-
-        <Text style={styles.scoreLabel}>
-          Health Score: {score}% ({getScoreLabel(score)})
+        <Text style={styles.resultLabel}></Text>
+        <Text style={styles.productName}>
+          {lastScan ? lastScan.name : "Scan your product"}
         </Text>
 
-        <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
+        {lastScan && !errorMessage && (
+          <>
+            <Text style={styles.scoreLabel}>
+              Health Score: {score}% ({getScoreLabel(score)})
+            </Text>
+
+            <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
+          </>
+        )}
+
+        {errorMessage && (
+          <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
+        )}
       </Pressable>
+
+      {errorMessage && (
+        <Button
+          title="Scan again"
+          onPress={() => {
+            setScanned(false);
+            setErrorMessage(null);
+          }}
+        />
+      )}
+
+      {/* Navigation card – only when we have a valid scan */}
+      {lastScan && !errorMessage && (
+        <View style={styles.navigationCard}>
+          <View style={styles.buttonsRow}>
+            <Pressable
+              style={styles.navButton}
+              onPress={() => router.push("/favourites")}
+            >
+              <Text style={styles.navButtonTitle}>Favourites</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.navButton}
+              onPress={() => router.push("/history")}
+            >
+              <Text style={styles.navButtonTitle}>History</Text>
+            </Pressable>
+            <Pressable
+              style={styles.navButton}
+              onPress={() => router.push("/recommendations")}
+            >
+              <Text style={styles.navButtonTitle}>Recommendations</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -180,7 +241,7 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#f4f4f7",
     padding: 16,
   },
   header: {
@@ -189,10 +250,10 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "white",
+    color: "#111827",
   },
   subtitle: {
-    color: "#cccccc",
+    color: "#6b7280",
     fontSize: 14,
     marginTop: 4,
   },
@@ -200,31 +261,38 @@ const styles = StyleSheet.create({
     flex: 1.2,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#333333",
-    backgroundColor: "#000000",
+    borderColor: "#e5e7eb",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   cameraText: {
     color: "#888888",
     fontSize: 14,
   },
   resultCard: {
-    flex: 0.9,
-    borderRadius: 16,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#333333",
+    borderColor: "#e5e7eb",
+    backgroundColor: "#ffffff",
+    marginBottom: 10,
     padding: 16,
-    backgroundColor: "#121212",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
   resultLabel: {
-    color: "#aaaaaa",
+    color: "#6b7280",
     fontSize: 13,
     marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   productName: {
-    color: "white",
+    color: "#111827",
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 8,
@@ -235,13 +303,51 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultMessage: {
-    color: "#e5e5e5",
-    fontSize: 14,
-    marginBottom: 12,
+    color: "#4b5563",
+    fontSize: 13,
+    marginBottom: 8,
   },
   buttonsRow: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     gap: 8,
+  },
+  navigationCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    padding: 12,
+    backgroundColor: "#ffffff",
+    marginTop: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+
+  navigationTitle: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
+  navButton: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    backgroundColor: "#f9fafb",
+    alignItems: "center",
+  },
+
+  navButtonTitle: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginBottom: 2,
   },
 });
