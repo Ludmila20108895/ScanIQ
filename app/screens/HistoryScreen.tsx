@@ -32,13 +32,13 @@ export default function HistoryScreen() {
           <View
             style={[
               styles.colourDot,
-              { backgroundColor: colourForLevel(item.level) },
+              { backgroundColor: colourForLevel(item.product.level) },
             ]}
           />
 
           <View style={styles.rowContent}>
-            <Text style={styles.rowName}>{item.name}</Text>
-            <Text style={styles.rowScore}>{item.score}%</Text>
+            <Text style={styles.rowName}>{item.product.name}</Text>
+            <Text style={styles.rowScore}>{item.product.score}%</Text>
           </View>
         </Pressable>
       ))}
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
 });
-const colourForLevel = (level: HistoryItem["level"]) => {
+const colourForLevel = (level: HistoryItem["product"]["level"]) => {
   switch (level) {
     case "bad":
       return "#ef4444"; // red
