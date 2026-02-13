@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { addToHistory } from "../../historyStore";
+import { Product } from "../../types/product";
 
 import {
   BarcodeScanningResult,
@@ -10,9 +11,19 @@ import {
 } from "expo-camera";
 
 const SAMPLE_SCANS = [
-  { id: "1", name: "Milk (1L)" },
-  { id: "2", name: "Bread (Wholemeal)" },
-  { id: "3", name: "Cheddar Cheese" },
+  { id: "1", barcode: "123456789012", name: "Milk (1L)", brand: "DairyBest" },
+  {
+    id: "2",
+    barcode: "2222222222222",
+    name: "Bread (Wholemeal)",
+    brand: "BreadCo",
+  },
+  {
+    id: "3",
+    barcode: "3333333333333",
+    name: "Cheddar Cheese",
+    brand: "CheeseMakers",
+  },
 ];
 
 // This screen shows a simulated scan result and health score
@@ -78,12 +89,33 @@ export default function ScanScreen() {
     }
     setLastScan(item); // update the last scanned item state
     setScore(newScore); // update the score state
-    addToHistory({
+
+    const product: Product = {
       id: item.id,
+      barcode: item.barcode,
       name: item.name,
+      brand: item.brand,
       score: newScore,
       level,
-    }); // add the scanned item to history with its score and level
+      negativeIngredients: [
+        // temporary demo data
+        {
+          id: "sugar",
+          name: "Sugar",
+          riskLevel: "high_risk",
+          shortImpact: "Too sweet",
+        },
+      ],
+      positiveIngredients: [
+        {
+          id: "fiber",
+          name: "Fiber",
+          riskLevel: "risk_free",
+          shortImpact: "Good for digestion",
+        },
+      ],
+    };
+    addToHistory(product);
   };
 
   if (!permission) {
@@ -126,8 +158,13 @@ export default function ScanScreen() {
       </View>
 
       {/* Last scanned item result card */}
-      <View style={styles.resultCard}>
-        <Text style={styles.resultLabel}>Last scanned item:</Text>
+      <Pressable
+        style={styles.resultCard}
+        onPress={() => {
+          //@ts-expect-error dynamic route string is valid at runtime
+          router.push("/product/" + lastScan.id);
+        }}
+      >
         <Text style={styles.productName}>{lastScan.name}</Text>
 
         <Text style={styles.scoreLabel}>
@@ -135,14 +172,7 @@ export default function ScanScreen() {
         </Text>
 
         <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
-
-        <View style={styles.buttonsRow}>
-          <Button
-            title="View details"
-            onPress={() => router.push("/history" as any)}
-          />
-        </View>
-      </View>
+      </Pressable>
     </View>
   );
 }
