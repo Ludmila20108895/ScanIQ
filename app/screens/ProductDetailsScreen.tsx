@@ -61,9 +61,9 @@ export default function ProductDetailsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerCard}>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.name}>{item.product.name}</Text>
         <Text style={styles.score}>{item.score}%</Text>
-        <Text style={styles.level}>{item.level.toUpperCase()}</Text>
+        <Text style={styles.level}>{item.product.level.toUpperCase()}</Text>
       </View>
 
       {/* reuse your existing sections: negative ingredients, positive, recommendations */}
