@@ -1,106 +1,118 @@
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Button, Pressable, StyleSheet, Text, View } from "react-native";
-import { addToHistory } from "../../historyStore";
-import { Product } from "../../types/product";
-
 import {
   BarcodeScanningResult,
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { getFavourites, toggleFavourite } from "../../favouritesStore";
+import { addToHistory } from "../../historyStore";
+import { Product } from "../../types/product";
+import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
+import { getScoreLabel, getScoreMessage } from "../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
 
-const SAMPLE_SCANS = [
-  { id: "1", barcode: "123456789012", name: "Milk (1L)", brand: "DairyBest" },
-  {
-    id: "2",
-    barcode: "2222222222222",
-    name: "Bread (Wholemeal)",
-    brand: "BreadCo",
-  },
-  {
-    id: "3",
-    barcode: "3333333333333",
-    name: "Cheddar Cheese",
-    brand: "CheeseMakers",
-  },
-];
+function CameraCard(props: {
+  onScanned: (result: BarcodeScanningResult) => void;
+  scanned: boolean;
+}) {
+  return (
+    <View style={styles.cameraBox}>
+      <CameraView
+        style={{ flex: 1, width: "100%" }}
+        facing="back"
+        onBarcodeScanned={props.scanned ? undefined : props.onScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ["ean13", "ean8", "upc_a", "qr"],
+        }}
+      />
+    </View>
+  );
+}
 
-// This screen shows a simulated scan result and health score
+function ResultCard(props: {
+  lastScan: (typeof SAMPLE_SCANS)[number] | null;
+  score: number;
+  errorMessage: string | null;
+  onOpenProduct: () => void;
+}) {
+  const { lastScan, score, errorMessage, onOpenProduct } = props;
+
+  return (
+    <Pressable style={styles.resultCard} onPress={onOpenProduct}>
+      <Text style={styles.resultLabel}></Text>
+      <Text style={styles.productName}>
+        {lastScan ? lastScan.name : "Scan your product"}
+      </Text>
+
+      {lastScan && !errorMessage && (
+        <>
+          <Text style={styles.scoreLabel}>
+            Health Score: {score}% ({getScoreLabel(score)})
+          </Text>
+          <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
+        </>
+      )}
+
+      {errorMessage && (
+        <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
+      )}
+    </Pressable>
+  );
+}
+
+// main screen
 export default function ScanScreen() {
-  const [permission, requestPermission] = useCameraPermissions(); // handle camera permissions
-  const [scanned, setScanned] = useState(false); // track if a scan has been made to prevent multiple scans
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanned, setScanned] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(false);
 
   const [lastScan, setLastScan] = useState<
     (typeof SAMPLE_SCANS)[number] | null
-  >(null); // demo last scanned item
-  const [score, setScore] = useState(75); // demo health score
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // state for error messages
+  >(null);
+  const [score, setScore] = useState(75);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // request camera permissions on mount
     if (!permission) {
-      requestPermission(); // ask for permission if we don't have it yet
+      requestPermission();
     }
-  }, [permission, requestPermission]); // only run on mount and when permission state changes
-
-  const getScoreLabel = (value: number) => {
-    if (value <= 25) return "Bad";
-    if (value <= 50) return "Poor";
-    if (value <= 75) return "Good";
-    return "Excellent";
-  };
-
-  const getScoreMessage = (value: number) => {
-    // provide a user-friendly message based on the score
-    if (value <= 25) {
-      return "This product is not a healthy choice.";
-    }
-    if (value <= 50) {
-      return "This product is rated as poor and should be consumed only occasionally.";
-    }
-    if (value <= 75) {
-      return "This product is a good choice! It contains essential nutrients and has a balanced profile.";
-    }
-    return "This product has an excellent score and is a very good choice overall.";
-  };
+  }, [permission, requestPermission]);
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {
-    // handle the barcode scanning result
-    if (scanned) return; // prevent multiple scans
-    setScanned(true); // mark as scanned to prevent further scans until we reset
+    if (scanned) return;
+    setScanned(true);
 
-    const data = result.data ?? ""; // get the scanned data (barcode value)
+    const data = result.data ?? "";
 
     if (data.length < 5) {
-      // simple validation to simulate product not found for short/invalid barcodes
       setErrorMessage("Product not found");
-      setLastScan(null); // clear last scan info on error
-      return; //
+      setLastScan(null);
+      return;
     }
 
-    setErrorMessage(null); // clear previous errors
+    setErrorMessage(null);
 
     let item = SAMPLE_SCANS[1];
     let newScore = 75;
     let level: "bad" | "poor" | "good" | "excellent" = "good";
 
     if (data.length % 3 === 0) {
-      // simulate different scan results based on the length of the scanned data
-      item = SAMPLE_SCANS[0]; // set the last scanned item to the first sample item
-      newScore = 22; // set a low score for this item
+      item = SAMPLE_SCANS[0];
+      newScore = 22;
       level = "bad";
     } else if (data.length % 3 === 1) {
-      // set the last scanned item to the second sample item and a medium score
-      item = SAMPLE_SCANS[1]; // set the last scanned item to the second sample item
-      newScore = 58; // set a medium score for this item
+      item = SAMPLE_SCANS[1];
+      newScore = 58;
     } else {
-      item = SAMPLE_SCANS[2]; // set the last scanned item to the third sample item
-      newScore = 82; // set a high score for this item
+      item = SAMPLE_SCANS[2];
+      newScore = 82;
       level = "excellent";
     }
-    setLastScan(item); // update the last scanned item state
-    setScore(newScore); // update the score state
+
+    setLastScan(item);
+    setScore(newScore);
+    setIsFavourite(getFavourites().includes(item.id));
 
     const product: Product = {
       id: item.id,
@@ -110,7 +122,6 @@ export default function ScanScreen() {
       score: newScore,
       level,
       negativeIngredients: [
-        // temporary demo data
         {
           id: "sugar",
           name: "Sugar",
@@ -142,7 +153,7 @@ export default function ScanScreen() {
     return (
       <View style={styles.container}>
         <Text style={{ color: "#888888", marginBottom: 12 }}>
-          Camera access is required to scan products.{" "}
+          Camera access is required to scan products.
         </Text>
         <Button title="Grant Camera Access" onPress={requestPermission} />
       </View>
@@ -151,52 +162,26 @@ export default function ScanScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header with app title and subtitle */}
+      {/* header */}
       <View style={styles.header}>
         <Text style={styles.appTitle}>ScanIQ</Text>
         <Text style={styles.subtitle}>Scan the barcode to get started</Text>
       </View>
 
-      {/* Live camera card */}
-      <View style={styles.cameraBox}>
-        <CameraView
-          style={{ flex: 1, width: "100%" }}
-          facing="back"
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["ean13", "ean8", "upc_a", "qr"],
-          }}
-        />
-      </View>
+      {/* camera */}
+      <CameraCard onScanned={handleBarCodeScanned} scanned={scanned} />
 
-      {/* result card */}
-      <Pressable
-        style={styles.resultCard}
-        onPress={() => {
-          if (!lastScan) return; // safety check
-          //@ts-expect-error dynamic route string is valid at runtime
+      {/* result */}
+      <ResultCard
+        lastScan={lastScan}
+        score={score}
+        errorMessage={errorMessage}
+        onOpenProduct={() => {
+          if (!lastScan) return;
+          // @ts-expect-error dynamic route is valid at runtime
           router.push("/product/" + lastScan.id);
         }}
-      >
-        <Text style={styles.resultLabel}></Text>
-        <Text style={styles.productName}>
-          {lastScan ? lastScan.name : "Scan your product"}
-        </Text>
-
-        {lastScan && !errorMessage && (
-          <>
-            <Text style={styles.scoreLabel}>
-              Health Score: {score}% ({getScoreLabel(score)})
-            </Text>
-
-            <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
-          </>
-        )}
-
-        {errorMessage && (
-          <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
-        )}
-      </Pressable>
+      />
 
       {errorMessage && (
         <Button
@@ -208,15 +193,22 @@ export default function ScanScreen() {
         />
       )}
 
-      {/* Navigation card – only when we have a valid scan */}
+      {/* navigation card */}
       {lastScan && !errorMessage && (
         <View style={styles.navigationCard}>
           <View style={styles.buttonsRow}>
             <Pressable
               style={styles.navButton}
-              onPress={() => router.push("/favourites")}
+              onPress={() => {
+                if (!lastScan) return;
+                toggleFavourite(lastScan.id);
+                setIsFavourite((prev) => !prev);
+                router.push("/favourites");
+              }}
             >
-              <Text style={styles.navButtonTitle}>Favourites</Text>
+              <Text style={styles.navButtonTitle}>
+                {isFavourite ? "Remove from Favourites" : "Add to Favourites"}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -225,6 +217,7 @@ export default function ScanScreen() {
             >
               <Text style={styles.navButtonTitle}>History</Text>
             </Pressable>
+
             <Pressable
               style={styles.navButton}
               onPress={() => router.push("/recommendations")}
@@ -325,14 +318,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
-
   navigationTitle: {
     color: "#111827",
     fontSize: 14,
     fontWeight: "bold",
     marginBottom: 10,
   },
-
   navButton: {
     flex: 1,
     borderRadius: 10,
@@ -343,7 +334,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     alignItems: "center",
   },
-
   navButtonTitle: {
     color: "#111827",
     fontSize: 13,

@@ -1,6 +1,14 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
-import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import {
+  Button,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { getFavourites, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
 import { IngredientRisk, Product, RiskLevel } from "../../types/product";
 
@@ -19,8 +27,12 @@ const colourForRisk = (level: RiskLevel) => {
 
 export default function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+
   const historyItem = id ? getHistoryItemById(id) : null;
   const product: Product | null = historyItem ? historyItem.product : null;
+  const [isFavourite, setIsFavourite] = useState<boolean>(
+    product ? getFavourites().includes(product.id) : false,
+  );
 
   if (!product) {
     return (
@@ -36,30 +48,42 @@ export default function ProductDetailsScreen() {
       <View style={styles.headerCard}>
         <Text style={styles.name}>{product.name}</Text>
         <Text style={styles.brand}>{product.brand}</Text>
-      </View>
 
-      {/*  */}
-      <View style={styles.scoreRow}>
-        <View
-          style={[
-            styles.levelDot,
-            {
-              backgroundColor:
-                product.level === "bad"
-                  ? "#ef4444"
-                  : product.level === "poor"
-                    ? "#f97316"
-                    : product.level === "good"
-                      ? "#22c55e"
-                      : "#16a34a",
-            },
-          ]}
-        />
-        <Text style={styles.scoreText}>{product.score}/100</Text>
+        {/*  */}
+        <View style={styles.scoreRow}>
+          <View
+            style={[
+              styles.levelDot,
+              {
+                backgroundColor:
+                  product.level === "bad"
+                    ? "#ef4444"
+                    : product.level === "poor"
+                      ? "#f97316"
+                      : product.level === "good"
+                        ? "#22c55e"
+                        : "#16a34a",
+              },
+            ]}
+          />
+          <Text style={styles.scoreText}>{product.score}/100</Text>
 
-        <Text style={styles.levelText}>
-          {product.level.charAt(0).toUpperCase() + product.level.slice(1)}
-        </Text>
+          <Text style={styles.levelText}>
+            {product.level.charAt(0).toUpperCase() + product.level.slice(1)}
+          </Text>
+        </View>
+
+        <Pressable
+          style={styles.favouriteButton}
+          onPress={() => {
+            toggleFavourite(product.id);
+            setIsFavourite((prev) => !prev);
+          }}
+        >
+          <Text style={styles.favouriteButtonText}>
+            {isFavourite ? "Remove from Favourites" : "Add to Favourites"}
+          </Text>
+        </Pressable>
       </View>
 
       {/* Negatives */}
@@ -215,5 +239,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#d32f2f",
     textAlign: "center",
+  },
+  favouriteButton: {
+    marginTop: 12,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#fbbf24",
+    alignItems: "center",
+  },
+  favouriteButtonText: {
+    color: "#111827",
+    fontWeight: "600",
   },
 });
