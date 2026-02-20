@@ -1,16 +1,18 @@
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Button, Pressable, Text, View } from "react-native";
+import { addToHistory } from "../../historyStore";
+import { Product } from "../../types/product";
+import { BottomNav } from "../components/BottomNav";
+import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
+import { scanStyles as styles } from "../styles/scanScreenStyles";
+import { getScoreLabel, getScoreMessage } from "../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
+
 import {
   BarcodeScanningResult,
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Button, Pressable, StyleSheet, Text, View } from "react-native";
-import { getFavourites, toggleFavourite } from "../../favouritesStore";
-import { addToHistory } from "../../historyStore";
-import { Product } from "../../types/product";
-import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
-import { getScoreLabel, getScoreMessage } from "../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
 
 function CameraCard(props: {
   onScanned: (result: BarcodeScanningResult) => void;
@@ -65,7 +67,6 @@ function ResultCard(props: {
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [isFavourite, setIsFavourite] = useState(false);
 
   const [lastScan, setLastScan] = useState<
     (typeof SAMPLE_SCANS)[number] | null
@@ -112,7 +113,6 @@ export default function ScanScreen() {
 
     setLastScan(item);
     setScore(newScore);
-    setIsFavourite(getFavourites().includes(item.id));
 
     const product: Product = {
       id: item.id,
@@ -193,151 +193,7 @@ export default function ScanScreen() {
         />
       )}
 
-      {/* navigation card */}
-      {lastScan && !errorMessage && (
-        <View style={styles.navigationCard}>
-          <View style={styles.buttonsRow}>
-            <Pressable
-              style={styles.navButton}
-              onPress={() => {
-                if (!lastScan) return;
-                toggleFavourite(lastScan.id);
-                setIsFavourite((prev) => !prev);
-                router.push("/favourites");
-              }}
-            >
-              <Text style={styles.navButtonTitle}>
-                {isFavourite ? "Remove from Favourites" : "Add to Favourites"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.navButton}
-              onPress={() => router.push("/history")}
-            >
-              <Text style={styles.navButtonTitle}>History</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.navButton}
-              onPress={() => router.push("/recommendations")}
-            >
-              <Text style={styles.navButtonTitle}>Recommendations</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      <BottomNav variant="scan" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f4f7",
-    padding: 16,
-  },
-  header: {
-    marginBottom: 12,
-  },
-  appTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  subtitle: {
-    color: "#6b7280",
-    fontSize: 14,
-    marginTop: 4,
-  },
-  cameraBox: {
-    flex: 1.2,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  cameraText: {
-    color: "#888888",
-    fontSize: 14,
-  },
-  resultCard: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#ffffff",
-    marginBottom: 10,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  resultLabel: {
-    color: "#6b7280",
-    fontSize: 13,
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  productName: {
-    color: "#111827",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  scoreLabel: {
-    color: "#4ade80",
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  resultMessage: {
-    color: "#4b5563",
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  navigationCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    padding: 12,
-    backgroundColor: "#ffffff",
-    marginTop: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  navigationTitle: {
-    color: "#111827",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  navButton: {
-    flex: 1,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    backgroundColor: "#f9fafb",
-    alignItems: "center",
-  },
-  navButtonTitle: {
-    color: "#111827",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-});
