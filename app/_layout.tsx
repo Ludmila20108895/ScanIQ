@@ -4,7 +4,11 @@ import React from "react";
 
 export default function RootLayout() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        contentStyle: { backgroundColor: "#72D8CF" }, // app background
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="favourites" options={{ title: "Favourites" }} />
       <Stack.Screen name="history" options={{ title: "History" }} />
