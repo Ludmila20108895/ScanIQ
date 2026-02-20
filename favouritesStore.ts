@@ -7,7 +7,7 @@ export function getFavourites() {
 export function toggleFavourite(id: string) {
   // toggle the presence of an item ID in the favourites list
   if (favouritesIds.includes(id)) {
-    favouritesIds = favouritesIds.filter((x) => x !== id);
+    favouritesIds = favouritesIds.filter((favId) => favId !== id);
   } else {
     favouritesIds = [...favouritesIds, id];
   }
