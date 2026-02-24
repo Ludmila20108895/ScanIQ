@@ -1,6 +1,13 @@
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Button, Pressable, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Button,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { addToHistory } from "../../historyStore";
 import { Product } from "../../types/product";
 import { BottomNav } from "../components/BottomNav";
@@ -14,24 +21,51 @@ import {
   useCameraPermissions,
 } from "expo-camera";
 
+// ----- helper: to choose alternative with score >= 70% -----
+function pickAlternative(
+  all: Product[],
+  current: Product,
+): Product | undefined {
+  // products with score >= 70 and not the same id
+  const candidates = all.filter((p) => p.id !== current.id && p.score >= 70);
+  if (candidates.length === 0) return undefined;
+
+  // choose the one with highest score
+  return candidates.reduce((best, p) => (p.score > best.score ? p : best));
+}
+
+// ----- camera card props -----
 function CameraCard(props: {
   onScanned: (result: BarcodeScanningResult) => void;
   scanned: boolean;
+  animatedLineStyle: any;
 }) {
   return (
     <View style={styles.cameraBox}>
       <CameraView
-        style={{ flex: 1, width: "100%" }}
+        style={StyleSheet.absoluteFill}
         facing="back"
         onBarcodeScanned={props.scanned ? undefined : props.onScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["ean13", "ean8", "upc_a", "qr"],
         }}
       />
+      {/* dim overlay to make it look nicer */}
+      <View style={styles.cameraDim} />
+
+      {/* scane frame */}
+      <View style={styles.scanFrame}>
+        <View style={styles.scanInner} />
+        <View style={[styles.corner, styles.cornerTL]} />
+        <View style={[styles.corner, styles.cornerTR]} />
+        <View style={[styles.corner, styles.cornerBL]} />
+        <View style={[styles.corner, styles.cornerBR]} />
+        <Animated.View style={[styles.scanLine, props.animatedLineStyle]} />
+      </View>
     </View>
   );
 }
-
+// ------ result card ------
 function ResultCard(props: {
   lastScan: (typeof SAMPLE_SCANS)[number] | null;
   score: number;
@@ -74,11 +108,41 @@ export default function ScanScreen() {
   const [score, setScore] = useState(75);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const lineAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (!permission) {
       requestPermission();
     }
   }, [permission, requestPermission]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(lineAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(lineAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [lineAnim]);
+
+  const animatedLineStyle = {
+    transform: [
+      {
+        translateY: lineAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 160],
+        }),
+      },
+    ],
+  };
 
   const handleBarCodeScanned = (result: BarcodeScanningResult) => {
     if (scanned) return;
@@ -138,12 +202,14 @@ export default function ScanScreen() {
         },
       ],
     };
-    addToHistory(product);
+
+    const alternative = pickAlternative(SAMPLE_SCANS as Product[], product);
+    addToHistory(product, alternative);
   };
 
   if (!permission) {
     return (
-      <View style={styles.container}>
+      <View style={{ flex: 1, backgroundColor: "#72D8CF", padding: 16 }}>
         <Text style={{ color: "#888888" }}>Checking camera permissions...</Text>
       </View>
     );
@@ -151,7 +217,7 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
+      <View style={{ flex: 1, backgroundColor: "#72D8CF", padding: 16 }}>
         <Text style={{ color: "#888888", marginBottom: 12 }}>
           Camera access is required to scan products.
         </Text>
@@ -161,27 +227,33 @@ export default function ScanScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* header */}
-      <View style={styles.header}>
-        <Text style={styles.appTitle}>ScanIQ</Text>
-        <Text style={styles.subtitle}>Scan the barcode to get started</Text>
+    <View style={{ flex: 1, backgroundColor: "#72D8CF" }}>
+      {/* content area */}
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>ScanIQ</Text>
+          <Text style={styles.subtitle}>Scan the barcode to get started</Text>
+        </View>
+
+        {/* camera */}
+        <CameraCard
+          onScanned={handleBarCodeScanned}
+          scanned={scanned}
+          animatedLineStyle={animatedLineStyle}
+        />
+
+        {/* result */}
+        <ResultCard
+          lastScan={lastScan}
+          score={score}
+          errorMessage={errorMessage}
+          onOpenProduct={() => {
+            if (!lastScan) return;
+            // @ts-expect-error dynamic route is valid at runtime
+            router.push("/product/" + lastScan.id);
+          }}
+        />
       </View>
-
-      {/* camera */}
-      <CameraCard onScanned={handleBarCodeScanned} scanned={scanned} />
-
-      {/* result */}
-      <ResultCard
-        lastScan={lastScan}
-        score={score}
-        errorMessage={errorMessage}
-        onOpenProduct={() => {
-          if (!lastScan) return;
-          // @ts-expect-error dynamic route is valid at runtime
-          router.push("/product/" + lastScan.id);
-        }}
-      />
 
       {errorMessage && (
         <Button
