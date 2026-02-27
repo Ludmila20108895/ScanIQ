@@ -305,6 +305,7 @@ export default function ScanScreen() {
         level: apiProduct.level,
         negativeIngredients,
         positiveIngredients,
+        imageUrl: apiProduct.imageUrl,
       };
 
       // 4) Choses main product with higher score

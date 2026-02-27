@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { getFavourites, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
 import { IngredientRisk, Product, RiskLevel } from "../../types/product";
@@ -17,7 +17,7 @@ const colourForRisk = (level: RiskLevel) => {
   switch (level) {
     case "risk_free":
       return "#22c55e";
-    case "to_watch":
+    case "medium_risk":
       return "#eab308";
     case "questionable":
       return "#f97316";
@@ -87,6 +87,19 @@ export default function ProductDetailsScreen() {
           <View style={styles.productTextBlock}>
             <Text style={styles.name}>{product.name}</Text>
             <Text style={styles.brand}>{product.brand}</Text>
+
+            {product.imageUrl && (
+              <Image
+                source={{ uri: product.imageUrl }}
+                style={{
+                  width: 160,
+                  height: 160,
+                  borderRadius: 12,
+                  marginTop: 12,
+                }}
+                resizeMode="contain"
+              />
+            )}
           </View>
 
           <View style={styles.scoreBlock}>

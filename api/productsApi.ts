@@ -11,6 +11,7 @@ export type ProductFromApi = {
   ingredientsText?: string;
   additivesTags?: string[];
   nutriments?: any;
+  imageUrl?: string;
 };
 
 export async function fetchProductByBarcode(
@@ -104,5 +105,6 @@ export async function fetchProductByBarcode(
     ingredientsText: p.ingredients_text,
     additivesTags: p.additives_tags ?? [],
     nutriments: p.nutriments ?? {},
+    imageUrl: p.image_front_url,
   };
 }

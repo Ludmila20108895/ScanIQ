@@ -21,4 +21,5 @@ export type Product = {
   level: "bad" | "poor" | "good" | "excellent";
   negativeIngredients: IngredientRisk[];
   positiveIngredients: IngredientRisk[];
+  imageUrl?: string;
 };
