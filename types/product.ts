@@ -1,4 +1,8 @@
-export type RiskLevel = "risk_free" | "to_watch" | "questionable" | "high_risk";
+export type RiskLevel =
+  | "risk_free"
+  | "medium_risk"
+  | "questionable"
+  | "high_risk";
 
 export type IngredientRisk = {
   id: string;
