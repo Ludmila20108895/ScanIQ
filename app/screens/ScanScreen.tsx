@@ -3,18 +3,19 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Button,
+  Image,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { fetchProductByBarcode, ProductFromApi } from "../../api/productsApi";
+import { BottomNav } from "../../components/BottomNav";
 import { addToHistory } from "../../historyStore";
 import { Product, RiskLevel } from "../../types/product";
-import { BottomNav } from "../components/BottomNav";
-import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
-import { scanStyles as styles } from "../styles/scanScreenStyles";
-import { getScoreLabel, getScoreMessage } from "../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
+// import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
+import { scanStyles as styles } from "../../styles/scanScreenStyles";
+import { getScoreLabel, getScoreMessage } from "../../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
 
 import {
   BarcodeScanningResult,
@@ -22,23 +23,17 @@ import {
   useCameraPermissions,
 } from "expo-camera";
 
-// ----- helper: to choose alternative with score >= 70% -----
-function pickAlternative(
-  all: Product[],
-  current: Product,
-): Product | undefined {
-  // products with score >= 70 and not the same id
-  const candidates = all.filter((p) => p.id !== current.id && p.score >= 70);
-  if (candidates.length === 0) return undefined;
-
-  // choose the one with highest score
-  return candidates.reduce((best, p) => (p.score > best.score ? p : best));
-}
+type LastScanInfo = {
+  id: string;
+  barcode: string;
+  name: string;
+  brand: string;
+};
 
 // ----- camera card props -----
 function CameraCard(props: {
   onScanned: (result: BarcodeScanningResult) => void;
-  scanned: boolean;
+
   animatedLineStyle: any;
 }) {
   return (
@@ -46,7 +41,7 @@ function CameraCard(props: {
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
-        onBarcodeScanned={props.scanned ? undefined : props.onScanned}
+        onBarcodeScanned={props.onScanned}
         barcodeScannerSettings={{
           barcodeTypes: ["ean13", "ean8", "upc_a", "qr"],
         }}
@@ -68,7 +63,7 @@ function CameraCard(props: {
 }
 // ------ result card ------
 function ResultCard(props: {
-  lastScan: (typeof SAMPLE_SCANS)[number] | null;
+  lastScan: LastScanInfo | null;
   score: number;
   errorMessage: string | null;
   onOpenProduct: () => void;
@@ -101,11 +96,9 @@ function ResultCard(props: {
 // main screen
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState<number>(0);
 
-  const [lastScan, setLastScan] = useState<
-    (typeof SAMPLE_SCANS)[number] | null
-  >(null);
+  const [lastScan, setLastScan] = useState<LastScanInfo | null>(null);
   const [score, setScore] = useState(75);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -146,15 +139,17 @@ export default function ScanScreen() {
   };
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult) => {
-    if (scanned) return;
-    setScanned(true);
+    const now = Date.now();
+    if (now - lastScanTime < 1500) {
+      return;
+    }
+    setLastScanTime(now);
 
     const data = result.data ?? "";
 
     if (data.length < 5) {
-      setErrorMessage("Product not found");
-      setLastScan(null);
-      setScanned(true);
+      // setErrorMessage("Product not found");
+      // setLastScan(null);
       return;
     }
     try {
@@ -309,7 +304,7 @@ export default function ScanScreen() {
       };
 
       // 4) Choses main product with higher score
-      const alternative = pickAlternative(SAMPLE_SCANS as Product[], product);
+      const alternative = undefined;
 
       // 5) Update user interface and history
       setLastScan({
@@ -323,58 +318,12 @@ export default function ScanScreen() {
       addToHistory(product, alternative);
     } catch (e) {
       console.error(e);
-
-      // Fall back to Sample_SCan if api fails
-      let item = SAMPLE_SCANS[1];
-      let newScore = 75;
-      let level: "bad" | "poor" | "good" | "excellent" = "good";
-
-      if (data.length % 3 === 0) {
-        item = SAMPLE_SCANS[0];
-        newScore = 22;
-        level = "bad";
-      } else if (data.length % 3 === 1) {
-        item = SAMPLE_SCANS[1];
-        newScore = 58;
+      if (e instanceof Error && e.message === "Product not found") {
+        setErrorMessage("Product not found");
+        setLastScan(null);
       } else {
-        item = SAMPLE_SCANS[2];
-        newScore = 82;
-        level = "excellent";
+        setErrorMessage("Could not reach product");
       }
-
-      setLastScan(item);
-      setScore(newScore);
-
-      const product: Product = {
-        id: item.id,
-        barcode: item.barcode,
-        name: item.name,
-        brand: item.brand,
-        score: newScore,
-        level,
-        negativeIngredients: [
-          {
-            id: "sugar",
-            name: "Sugar",
-            riskLevel: "high_risk",
-            shortImpact: "Too sweet",
-          },
-        ],
-        positiveIngredients: [
-          {
-            id: "fiber",
-            name: "Fiber",
-            riskLevel: "risk_free",
-            shortImpact: "Good for digestion",
-          },
-        ],
-      };
-
-      const alternative = pickAlternative(SAMPLE_SCANS as Product[], product);
-      addToHistory(product, alternative);
-
-      setErrorMessage("Could not reach product API");
-      setScanned(false);
     }
   };
 
@@ -402,14 +351,21 @@ export default function ScanScreen() {
       {/* content area */}
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.appTitle}>ScanIQ</Text>
-          <Text style={styles.subtitle}>Scan the barcode to get started</Text>
+          <Image
+            source={require("../../assets/images/Logo.png")}
+            style={{
+              width: 100,
+              height: 100,
+              resizeMode: "contain",
+              marginBottom: 8,
+            }}
+          />
+          {/* <Text style={styles.subtitle}>Scan the barcode to get started</Text> */}
         </View>
 
         {/* camera */}
         <CameraCard
           onScanned={handleBarCodeScanned}
-          scanned={scanned}
           animatedLineStyle={animatedLineStyle}
         />
 
@@ -425,16 +381,6 @@ export default function ScanScreen() {
           }}
         />
       </View>
-
-      {errorMessage && (
-        <Button
-          title="Scan again"
-          onPress={() => {
-            setScanned(false);
-            setErrorMessage(null);
-          }}
-        />
-      )}
 
       <BottomNav variant="scan" />
     </View>

@@ -6,6 +6,7 @@ export default function RootLayout() {
     <Stack
       screenOptions={{
         contentStyle: { backgroundColor: "#72D8CF" }, // app background
+        headerTitleAlign: "center", // center the header title
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

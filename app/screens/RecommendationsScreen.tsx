@@ -1,9 +1,9 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { BottomNav } from "../../components/BottomNav";
 import { getHistory, HistoryItem } from "../../historyStore";
-import { BottomNav } from "../components/BottomNav";
-import { recommendationsStyles as styles } from "../styles/recommendationsScreenStyles";
+import { recommendationsStyles as styles } from "../../styles/recommendationsScreenStyles";
 
 export default function RecommendationsScreen() {
   const [history, setHistory] = useState<HistoryItem[]>([]);

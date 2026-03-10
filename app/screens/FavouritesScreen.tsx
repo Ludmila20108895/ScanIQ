@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { BottomNav } from "../../components/BottomNav";
 import { getFavourites } from "../../favouritesStore";
 import { getHistory, HistoryItem } from "../../historyStore";
-import { BottomNav } from "../components/BottomNav";
-import { favouritesStyles as styles } from "../styles/favouritesScreenStyles";
+import { favouritesStyles as styles } from "../../styles/favouritesScreenStyles";
 
 export default function FavouritesScreen() {
   const [favourites, setFavourites] = useState<string[]>(getFavourites());

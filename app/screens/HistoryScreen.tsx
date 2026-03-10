@@ -1,9 +1,9 @@
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { BottomNav } from "../../components/BottomNav";
 import { getHistory, HistoryItem } from "../../historyStore";
-import { BottomNav } from "../components/BottomNav";
-import { historyStyles as styles } from "../styles/historyScreenStyles";
+import { historyStyles as styles } from "../../styles/historyScreenStyles";
 
 const colourForLevel = (level: HistoryItem["product"]["level"]) => {
   switch (level) {

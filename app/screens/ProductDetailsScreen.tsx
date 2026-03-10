@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { getFavourites, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
+import { styles } from "../../styles/productDetailsStyles";
 import { IngredientRisk, Product, RiskLevel } from "../../types/product";
-import { styles } from "../styles/productDetailsStyles";
 
 const colourForScore = (score: number) => {
   if (score >= 75) return "#16a34a"; // green
@@ -38,7 +38,6 @@ export default function ProductDetailsScreen() {
   if (!product) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.error}>Product not found.</Text>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Back to Scan</Text>
         </Pressable>{" "}
