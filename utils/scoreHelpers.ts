@@ -14,7 +14,7 @@ export const getScoreMessage = (value: number) => {
     return "This product is rated as poor and should be consumed only occasionally.";
   }
   if (value <= 75) {
-    return "This product is a good choice! It contains essential nutrients and has a balanced profile.";
+    return "This product is a good choice!";
   }
   return "This product has an excellent score and is a very good choice overall.";
 };

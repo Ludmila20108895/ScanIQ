@@ -16,7 +16,7 @@ export type ProductFromApi = {
 
 export async function fetchProductByBarcode(
   barcode: string,
-): Promise<ProductFromApi> {
+): Promise<ProductFromApi | null> {
   console.log("Calling API with barcode:", barcode);
 
   const res = await fetch(
@@ -26,7 +26,7 @@ export async function fetchProductByBarcode(
   console.log("API status:", res.status);
 
   if (!res.ok) {
-    throw new Error("Product not found");
+    throw new Error("[network error]");
   }
 
   const json = await res.json();
@@ -34,7 +34,7 @@ export async function fetchProductByBarcode(
 
   // Open Food Facts returns { status, product: {...}}
   if (json.status !== 1 || !json.product) {
-    throw new Error("Product not found");
+    return null;
   }
 
   const p = json.product;

@@ -85,10 +85,7 @@ function ResultCard(props: {
           <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
         </>
       )}
-
-      {errorMessage && (
-        <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
-      )}
+      <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
     </Pressable>
   );
 }
@@ -148,15 +145,23 @@ export default function ScanScreen() {
     const data = result.data ?? "";
 
     if (data.length < 5) {
-      // setErrorMessage("Product not found");
-      // setLastScan(null);
+      setErrorMessage("Product not found");
+      setLastScan(null);
       return;
     }
     try {
       setErrorMessage(null);
 
       // 1) Call the Api
-      const apiProduct: ProductFromApi = await fetchProductByBarcode(data);
+      const apiProduct: ProductFromApi | null =
+        await fetchProductByBarcode(data);
+
+      if (!apiProduct) {
+        // product not found in OFF
+        setErrorMessage("Product not found");
+        setLastScan(null);
+        return;
+      }
 
       // 2) Build negative / positive ingredients from API data
       const negativeIngredients: Product["negativeIngredients"] = [];
@@ -318,12 +323,7 @@ export default function ScanScreen() {
       addToHistory(product, alternative);
     } catch (e) {
       console.error(e);
-      if (e instanceof Error && e.message === "Product not found") {
-        setErrorMessage("Product not found");
-        setLastScan(null);
-      } else {
-        setErrorMessage("Could not reach product");
-      }
+      setErrorMessage("Could not reach product");
     }
   };
 
@@ -360,7 +360,6 @@ export default function ScanScreen() {
               marginBottom: 8,
             }}
           />
-          {/* <Text style={styles.subtitle}>Scan the barcode to get started</Text> */}
         </View>
 
         {/* camera */}
