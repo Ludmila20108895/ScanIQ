@@ -2,20 +2,21 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { BottomNav } from "../../components/BottomNav";
-import { getFavourites } from "../../favouritesStore";
-import { getHistory, HistoryItem } from "../../historyStore";
+import { FavouriteItem, getFavourites } from "../../favouritesStore";
 import { favouritesStyles as styles } from "../../styles/favouritesScreenStyles";
 
 export default function FavouritesScreen() {
-  const [favourites, setFavourites] = useState<string[]>(getFavourites());
-  const [history, setHistory] = useState<HistoryItem[]>(getHistory());
+  const [favourites, setFavourites] = useState<FavouriteItem[]>([]);
 
   useEffect(() => {
-    setFavourites(getFavourites());
-    setHistory(getHistory());
+    const loadFavourites = async () => {
+      const data = await getFavourites();
+      setFavourites(data);
+    };
+    loadFavourites();
   }, []);
 
-  const favouriteItems = history.filter((item) => favourites.includes(item.id));
+  const favouriteItems = favourites.map((fav) => fav.product);
 
   return (
     <View style={styles.container}>
@@ -27,7 +28,7 @@ export default function FavouritesScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {favouriteItems.map((item) => (
+          {favourites.map((item: FavouriteItem) => (
             <Pressable
               key={item.id}
               style={styles.itemCard}
@@ -38,7 +39,7 @@ export default function FavouritesScreen() {
             >
               <Text style={styles.productName}>{item.product.name}</Text>
               <Text style={styles.productBrand}>{item.product.brand}</Text>
-              <Text style={styles.scoreLabel}>Score: {item.score}</Text>
+              <Text style={styles.scoreLabel}>Score: {item.product.score}</Text>
               <Text style={styles.resultMessage}>
                 This product is a {item.product.level} choice based on its
                 nutritional profile.
