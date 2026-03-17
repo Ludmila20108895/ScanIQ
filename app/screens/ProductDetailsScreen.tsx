@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
-import { getFavourites, toggleFavourite } from "../../favouritesStore";
+import { isFavourite, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
 import { styles } from "../../styles/productDetailsStyles";
 import { IngredientRisk, Product, RiskLevel } from "../../types/product";
@@ -29,18 +29,29 @@ const colourForRisk = (level: RiskLevel) => {
 export default function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const historyItem = id ? getHistoryItemById(id) : null;
-  const product: Product | null = historyItem ? historyItem.product : null;
-  const [isFavourite, setIsFavourite] = useState<boolean>(
-    product ? getFavourites().includes(product.id) : false,
-  );
+  const [product, setProduct] = useState<Product | null>(null);
+  const [favouriteState, setFavouriteState] = useState<boolean>(false);
+
+  // Load product details and favourite status asynchronously when ID changes
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      const historyItem = await getHistoryItemById(id);
+      if (historyItem) {
+        setProduct(historyItem.product);
+        const favouriteStatus = await isFavourite(historyItem.product.id);
+        setFavouriteState(favouriteStatus);
+      }
+    };
+    load();
+  }, [id]);
 
   if (!product) {
     return (
       <View style={styles.emptyContainer}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Back to Scan</Text>
-        </Pressable>{" "}
+        </Pressable>
       </View>
     );
   }
@@ -48,10 +59,10 @@ export default function ProductDetailsScreen() {
   const levelLabel =
     product.level.charAt(0).toUpperCase() + product.level.slice(1);
 
-  const handleToggleFavourite = () => {
+  const handleToggleFavourite = async () => {
     if (!product) return;
-    toggleFavourite(product.id);
-    setIsFavourite((prev) => !prev);
+    await toggleFavourite(product); // pass full product object
+    setFavouriteState((prev) => !prev);
   };
 
   const recommendationText =
@@ -120,10 +131,12 @@ export default function ProductDetailsScreen() {
         hitSlop={8}
       >
         <Text style={styles.favText}>
-          {isFavourite ? "Remove from favourites" : "Add to favourites"}
+          {favouriteState ? "Remove from favourites" : "Add to favourites"}
         </Text>
-        <Text style={[styles.favHeart, isFavourite && styles.favHeartActive]}>
-          {isFavourite ? "♥" : "♡"}
+        <Text
+          style={[styles.favHeart, favouriteState && styles.favHeartActive]}
+        >
+          {favouriteState ? "♥" : "♡"}
         </Text>
       </Pressable>
 
