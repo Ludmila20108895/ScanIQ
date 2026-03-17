@@ -22,8 +22,12 @@ export default function HistoryScreen() {
   const [history, setHistory] = useState<HistoryItem[]>([]); // State to hold history items
 
   useEffect(() => {
-    setHistory(getHistory()); // Load history items on component mount
-  }, []); // Empty dependency array to run only once on mount
+    const loadHistory = async () => {
+      const data = await getHistory();
+      setHistory(data);
+    };
+    loadHistory();
+  }, []);
 
   return (
     <View style={styles.container}>
