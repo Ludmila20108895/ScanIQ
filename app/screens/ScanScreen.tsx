@@ -9,12 +9,15 @@ import {
   Text,
   View,
 } from "react-native";
-import { fetchProductByBarcode, ProductFromApi } from "../../api/productsApi";
+import {
+  fetchAlternative,
+  fetchProductByBarcode,
+  ProductFromApi,
+} from "../../api/productsApi";
 import { BottomNav } from "../../components/BottomNav";
 import { addToHistory } from "../../historyStore";
-import { Product, RiskLevel } from "../../types/product";
-// import { SAMPLE_SCANS } from "../data/sampleScans"; // sample scan data to simulate scanning different products with varying scores
 import { scanStyles as styles } from "../../styles/scanScreenStyles";
+import { Product, RiskLevel } from "../../types/product";
 import { getScoreLabel, getScoreMessage } from "../../utils/scoreHelpers"; // helper functions to get user-friendly score labels and messages
 
 import {
@@ -181,7 +184,7 @@ export default function ScanScreen() {
 
         if (sugars >= 20) {
           riskLevel = "high_risk";
-          shortImpact = "Very high sugar content";
+          shortImpact = "Very high sugar";
         } else if (sugars >= 10) {
           riskLevel = "questionable";
           shortImpact = "High sugar content";
@@ -308,8 +311,21 @@ export default function ScanScreen() {
         imageUrl: apiProduct.imageUrl,
       };
 
-      // 4) Choses main product with higher score
-      const alternative = undefined;
+      // 4) Fetch a better alternative from the same category
+      const alternativeApi = await fetchAlternative(apiProduct);
+      const alternative: Product | undefined = alternativeApi
+        ? {
+            id: alternativeApi.id,
+            barcode: alternativeApi.id,
+            name: alternativeApi.name,
+            brand: alternativeApi.brand,
+            score: alternativeApi.score,
+            level: alternativeApi.level,
+            negativeIngredients: [],
+            positiveIngredients: [],
+            imageUrl: alternativeApi.imageUrl,
+          }
+        : undefined;
 
       // 5) Update user interface and history
       setLastScan({
@@ -320,7 +336,7 @@ export default function ScanScreen() {
       } as any);
       setScore(product.score);
 
-      addToHistory(product, alternative);
+      await addToHistory(product, alternative);
     } catch (e) {
       console.error(e);
       setErrorMessage("Could not reach product");
