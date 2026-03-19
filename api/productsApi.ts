@@ -164,7 +164,10 @@ export async function fetchProductByBarcode(
 ): Promise<ProductFromApi | null> {
   try {
     const url = `${BASE_URL}/${barcode}.json`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 5s timeout
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!response.ok) return null;
 
     const data = await response.json();
@@ -193,8 +196,8 @@ export async function fetchProductByBarcode(
       score,
       level: scoreToLevel(score),
     };
-  } catch (error) {
-    console.error("Barcode failed:", error);
+  } catch {
+    //console.error("Barcode failed:", error);
     return null;
   }
 }
@@ -224,8 +227,8 @@ export async function fetchAlternative(
       }
     }
     return bestCandidate;
-  } catch (error) {
-    console.error("Alternative fetch failed:", error);
+  } catch {
+    // console.error("Alternative fetch failed:", error);
     return null;
   }
 }
