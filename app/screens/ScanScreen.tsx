@@ -36,7 +36,6 @@ type LastScanInfo = {
 // ----- camera card props -----
 function CameraCard(props: {
   onScanned: (result: BarcodeScanningResult) => void;
-
   animatedLineStyle: any;
 }) {
   return (
@@ -68,19 +67,23 @@ function CameraCard(props: {
 function ResultCard(props: {
   lastScan: LastScanInfo | null;
   score: number;
-  errorMessage: string | null;
+  notFound?: boolean;
+  // errorMessage: string | null;
   onOpenProduct: () => void;
 }) {
-  const { lastScan, score, errorMessage, onOpenProduct } = props;
+  const { lastScan, score, notFound, onOpenProduct } = props;
 
   return (
     <Pressable style={styles.resultCard} onPress={onOpenProduct}>
-      <Text style={styles.resultLabel}></Text>
-      <Text style={styles.productName}>
-        {lastScan ? lastScan.name : "Scan your product"}
-      </Text>
+      {notFound ? (
+        <Text style={styles.productName}>Product not found</Text>
+      ) : (
+        <Text style={styles.productName}>
+          {lastScan ? lastScan.name : "Scan your product"}
+        </Text>
+      )}
 
-      {lastScan && !errorMessage && (
+      {lastScan && !notFound && (
         <>
           <Text style={styles.scoreLabel}>
             Health Score: {score}% ({getScoreLabel(score)})
@@ -88,7 +91,8 @@ function ResultCard(props: {
           <Text style={styles.resultMessage}>{getScoreMessage(score)}</Text>
         </>
       )}
-      <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text>
+
+      {/* <Text style={{ color: "#f97316", marginTop: 8 }}>{errorMessage}</Text> */}
     </Pressable>
   );
 }
@@ -96,13 +100,17 @@ function ResultCard(props: {
 // main screen
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [lastScanTime, setLastScanTime] = useState<number>(0);
+
+  //const [lastScanTime, setLastScanTime] = useState<number>(0);
 
   const [lastScan, setLastScan] = useState<LastScanInfo | null>(null);
   const [score, setScore] = useState(75);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  // const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const lineAnim = useRef(new Animated.Value(0)).current;
+  const isScanning = useRef(false);
 
   useEffect(() => {
     if (!permission) {
@@ -139,30 +147,29 @@ export default function ScanScreen() {
   };
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult) => {
-    const now = Date.now();
-    if (now - lastScanTime < 1500) {
-      return;
-    }
-    setLastScanTime(now);
+    if (isScanning.current) return;
+    isScanning.current = true;
 
     const data = result.data ?? "";
 
     if (data.length < 5) {
-      setErrorMessage("Product not found");
-      setLastScan(null);
+      setTimeout(() => {
+        isScanning.current = false;
+      }, 3000);
       return;
     }
     try {
-      setErrorMessage(null);
+      setNotFound(false);
 
-      // 1) Call the Api
+      // 1) Fetch product details from Open Food Facts
       const apiProduct: ProductFromApi | null =
         await fetchProductByBarcode(data);
 
       if (!apiProduct) {
-        // product not found in OFF
-        setErrorMessage("Product not found");
-        setLastScan(null);
+        setNotFound(true);
+        setTimeout(() => {
+          isScanning.current = false;
+        }, 3000);
         return;
       }
 
@@ -337,9 +344,14 @@ export default function ScanScreen() {
       setScore(product.score);
 
       await addToHistory(product, alternative);
-    } catch (e) {
-      console.error(e);
-      setErrorMessage("Could not reach product");
+      setTimeout(() => {
+        isScanning.current = false;
+      }, 1500);
+    } catch {
+      // setNotFound(true);
+      setTimeout(() => {
+        isScanning.current = false;
+      }, 3000);
     }
   };
 
@@ -388,7 +400,7 @@ export default function ScanScreen() {
         <ResultCard
           lastScan={lastScan}
           score={score}
-          errorMessage={errorMessage}
+          notFound={notFound}
           onOpenProduct={() => {
             if (!lastScan) return;
             // @ts-expect-error dynamic route is valid at runtime
