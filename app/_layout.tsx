@@ -17,6 +17,7 @@ export default function RootLayout() {
         name="recommendations"
         options={{ title: "Recommendations" }}
       />
+      <Stack.Screen name="alternatives" options={{ title: "Alternatives" }} />
     </Stack>
   );
 }
