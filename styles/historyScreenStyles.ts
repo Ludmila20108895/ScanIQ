@@ -12,7 +12,7 @@ export const historyStyles = StyleSheet.create({
   row: {
     flexDirection: "row",
     borderRadius: 12,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#FFF7D6",
     marginBottom: 8,
     overflow: "hidden",
     paddingHorizontal: 12,
