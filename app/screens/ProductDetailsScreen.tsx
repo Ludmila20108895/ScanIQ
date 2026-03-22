@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { fetchProductByBarcode } from "../../api/productsApi";
+
 import { isFavourite, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
 import { styles } from "../../styles/productDetailsStyles";
@@ -30,27 +32,46 @@ export default function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [favouriteState, setFavouriteState] = useState<boolean>(false);
-
-  // Load product details and favourite status asynchronously when ID changes
+  const [favouriteState, setFavouriteState] = useState(false);
   useEffect(() => {
     const load = async () => {
       if (!id) return;
+
+      // First try to load from history for faster access
       const historyItem = await getHistoryItemById(id);
+
       if (historyItem) {
         setProduct(historyItem.product);
         const favouriteStatus = await isFavourite(historyItem.product.id);
+        setFavouriteState(favouriteStatus);
+        return;
+      }
+      // fallback to a placeholder product if not found in history (shouldn't happen)
+      const apiProduct = await fetchProductByBarcode(id);
+      if (apiProduct) {
+        const mapped: Product = {
+          id: apiProduct.id,
+          barcode: apiProduct.id,
+          name: apiProduct.name,
+          brand: apiProduct.brand,
+          score: apiProduct.score,
+          level: apiProduct.level,
+          negativeIngredients: [],
+          positiveIngredients: [],
+          imageUrl: apiProduct.imageUrl,
+        };
+        setProduct(mapped);
+        const favouriteStatus = await isFavourite(mapped.id);
         setFavouriteState(favouriteStatus);
       }
     };
     load();
   }, [id]);
-
   if (!product) {
     return (
       <View style={styles.emptyContainer}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Back to Scan</Text>
+        <Pressable onPress={() => router.back()}>
+          <Text>Back</Text>
         </Pressable>
       </View>
     );
@@ -60,17 +81,17 @@ export default function ProductDetailsScreen() {
     product.level.charAt(0).toUpperCase() + product.level.slice(1);
 
   const handleToggleFavourite = async () => {
-    if (!product) return;
     await toggleFavourite(product); // pass full product object
     setFavouriteState((prev) => !prev);
   };
 
   const recommendationText =
     product.score >= 75
-      ? "This product is an excellent choice overall."
+      ? "This product is an excellent choice."
       : product.score >= 50
-        ? "This product is okay, but there may be better options available."
-        : "Consider limiting this product and choosing options with fewer risky ingredients.";
+        ? "This product is okay."
+        : "Try better alternative.";
+
   const renderNutrientCard = (label: string, value: string) => (
     <View key={label} style={styles.nutrientCard}>
       <Text style={styles.nutrientLabel}>{label}</Text>
@@ -131,7 +152,7 @@ export default function ProductDetailsScreen() {
         hitSlop={8}
       >
         <Text style={styles.favText}>
-          {favouriteState ? "Remove from favourites" : "Add to favourites"}
+          {favouriteState ? "Remove favourites" : "Add to favourites"}
         </Text>
         <Text
           style={[styles.favHeart, favouriteState && styles.favHeartActive]}
