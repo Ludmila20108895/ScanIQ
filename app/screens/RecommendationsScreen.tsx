@@ -5,6 +5,19 @@ import { BottomNav } from "../../components/BottomNav";
 import { getHistory, HistoryItem } from "../../historyStore";
 import { recommendationsStyles as styles } from "../../styles/recommendationsScreenStyles";
 
+const colourForLevel = (level: HistoryItem["product"]["level"]) => {
+  switch (level) {
+    case "bad":
+      return "#ef4444";
+    case "poor":
+      return "#f97316";
+    case "good":
+      return "#22c55e";
+    case "excellent":
+      return "#16a34a";
+  }
+};
+
 export default function RecommendationsScreen() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
@@ -16,9 +29,7 @@ export default function RecommendationsScreen() {
     loadHistory();
   }, []);
 
-  const recommended = history.filter(
-    (item) => item.product.score < 50 && item.alternative !== null,
-  ); // Only show items where we have an alternative recommendation
+  const recommended = history.filter((item) => item.product.score < 50); // Only show items where we have an alternative recommendation
 
   if (recommended.length === 0) {
     return (
@@ -36,8 +47,7 @@ export default function RecommendationsScreen() {
       <ScrollView contentContainerStyle={styles.listContainer}>
         {recommended.map((item) => (
           <View key={item.id} style={styles.pairRow}>
-            {/* left: scanned */}
-
+            {/* left: scanned  product, to ProductDetailsScreen */}
             <Pressable
               style={styles.card}
               onPress={() => {
@@ -45,29 +55,78 @@ export default function RecommendationsScreen() {
                 router.push("/product/" + item.id);
               }}
             >
-              <Text style={styles.cardLabel}>Product scanned</Text>
-              <Text style={styles.cardName}>{item.product.name}</Text>
-              <Text style={styles.cardScore}>{item.product.score}%</Text>
+              <View style={styles.cardInner}>
+                <View
+                  style={[
+                    styles.colourDot,
+                    { backgroundColor: colourForLevel(item.product.level) },
+                  ]}
+                />
+                <View style={styles.cardText}>
+                  <Text style={styles.cardLabel}>Product scanned</Text>
+                  <Text style={styles.cardName} numberOfLines={2}>
+                    {item.product.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.cardScore,
+                      { color: colourForLevel(item.product.level) },
+                    ]}
+                  >
+                    {item.product.score}%
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.chevron}>→</Text>
             </Pressable>
 
-            {/* right : the alternative */}
+            {/* right : the alternative, to AlternativesScreen */}
             {item.alternative ? (
               <Pressable
                 style={styles.card}
                 onPress={() => {
                   // @ts-expect-error id is string at runtime
-                  router.push("/product/" + item.alternative.id);
+                  router.push("/alternatives?barcode=" + item.product.id);
                 }}
               >
-                <Text style={styles.cardLabel}>We recommend</Text>
-                <Text style={styles.cardName}>{item.alternative.name}</Text>
-                <Text style={styles.cardScore}>{item.alternative.score}%</Text>
+                <View style={styles.cardInner}>
+                  <View
+                    style={[
+                      styles.colourDot,
+                      {
+                        backgroundColor: colourForLevel(item.alternative.level),
+                      },
+                    ]}
+                  />
+                  <View style={styles.cardText}>
+                    <Text style={styles.cardLabel}>We recommend</Text>
+                    <Text style={styles.cardName} numberOfLines={2}>
+                      {item.alternative.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cardScore,
+                        { color: colourForLevel(item.alternative.level) },
+                      ]}
+                    >
+                      {item.alternative.score}%
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.chevron}>›</Text>
               </Pressable>
             ) : (
               <View style={[styles.card, { opacity: 0.5 }]}>
-                <Text style={styles.cardLabel}>We reccommend</Text>
-                <Text style={styles.cardName}>No better alternative found</Text>
-                <Text style={styles.cardScore}>-</Text>
+                <View style={styles.cardInner}>
+                  <View style={styles.colourDot} />
+                  <View style={styles.cardText}>
+                    <Text style={styles.cardLabel}>We reccommend</Text>
+                    <Text style={styles.cardName}>
+                      No better alternative found
+                    </Text>
+                    <Text style={styles.cardScore}>—</Text>
+                  </View>
+                </View>
               </View>
             )}
           </View>
