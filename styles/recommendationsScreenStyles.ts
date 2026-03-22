@@ -7,58 +7,80 @@ export const recommendationsStyles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
-  // row that holds two cards
+
+  // row holding left + right card side by side
   pairRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
+    gap: 8,
   },
-  // each product card
+
+  // each card that takes equal space
   card: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#FFF7D6",
     borderRadius: 12,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginHorizontal: 4,
+    paddingHorizontal: 10,
+    // row so content sits left and chevron sits right
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
+  // left side of card: dot + text stacked
+  cardInner: {
+    flex: 1,
+    flexDirection: "column",
+  },
+
+  // colour dot top of each card
+  colourDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+
+  cardText: {
+    flex: 1,
+  },
+
   cardLabel: {
     fontSize: 12,
     color: "#6b7280",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   cardName: {
     fontSize: 14,
     fontWeight: "600",
     color: "#111827",
     marginBottom: 4,
+    lineHeight: 17,
   },
   cardScore: {
     fontSize: 14,
-    color: "#16a34a",
+    fontWeight: "700",
+    // colour set inline per product level
   },
 
-  colourDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginRight: 12,
-    marginTop: 10,
+  // › chevron is on the right edge of card
+  chevron: {
+    fontSize: 20,
+    color: "#6b7280",
+    marginLeft: 4,
+    alignSelf: "center",
   },
-  rowContent: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-  },
-  rowName: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  rowScore: { fontSize: 16, color: "#6b5563" },
+
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  emptyText: { color: "#6b7280", fontSize: 16 },
+  emptyText: {
+    color: "#6b7280",
+    fontSize: 16,
+  },
 });
