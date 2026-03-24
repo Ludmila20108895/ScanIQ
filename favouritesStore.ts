@@ -37,9 +37,7 @@ export async function toggleFavourite(product: Product): Promise<void> {
       FAVOURITES_KEY,
       JSON.stringify(updatedFavourites),
     );
-  } catch (error) {
-    console.error("Failed to toggle favourite:", error);
-  }
+  } catch {}
 }
 export async function isFavourite(id: string): Promise<boolean> {
   try {
@@ -58,7 +56,11 @@ export async function removeFavourite(id: string): Promise<void> {
       FAVOURITES_KEY,
       JSON.stringify(updatedFavourites),
     );
-  } catch (error) {
-    console.error("Failed to remove favourite:", error);
-  }
+  } catch {}
+}
+export async function deleteFavouriteItems(ids: string[]) {
+  const current = await getFavourites();
+  const updated = current.filter((item) => !ids.includes(item.id));
+
+  await AsyncStorage.setItem(FAVOURITES_KEY, JSON.stringify(updated));
 }
