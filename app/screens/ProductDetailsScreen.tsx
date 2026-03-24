@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { fetchProductByBarcode } from "../../api/productsApi";
 
+import { analyzeIngredients } from "@/logic/ingredientAnalysis";
 import { isFavourite, toggleFavourite } from "../../favouritesStore";
 import { getHistoryItemById } from "../../historyStore";
 import { styles } from "../../styles/productDetailsStyles";
@@ -48,7 +49,10 @@ export default function ProductDetailsScreen() {
       }
       // fallback to a placeholder product if not found in history (shouldn't happen)
       const apiProduct = await fetchProductByBarcode(id);
+
       if (apiProduct) {
+        const analysis = analyzeIngredients(apiProduct);
+
         const mapped: Product = {
           id: apiProduct.id,
           barcode: apiProduct.id,
@@ -56,8 +60,8 @@ export default function ProductDetailsScreen() {
           brand: apiProduct.brand,
           score: apiProduct.score,
           level: apiProduct.level,
-          negativeIngredients: [],
-          positiveIngredients: [],
+          negativeIngredients: analysis.negatives,
+          positiveIngredients: analysis.positives,
           imageUrl: apiProduct.imageUrl,
         };
         setProduct(mapped);
@@ -84,13 +88,6 @@ export default function ProductDetailsScreen() {
     await toggleFavourite(product); // pass full product object
     setFavouriteState((prev) => !prev);
   };
-
-  const recommendationText =
-    product.score >= 75
-      ? "This product is an excellent choice."
-      : product.score >= 50
-        ? "This product is okay."
-        : "Try better alternative.";
 
   const renderNutrientCard = (label: string, value: string) => (
     <View key={label} style={styles.nutrientCard}>
@@ -191,9 +188,7 @@ export default function ProductDetailsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Positives</Text>
         {product.positiveIngredients.length === 0 ? (
-          <Text style={styles.sectionLine}>
-            No notable positive ingredients.
-          </Text>
+          <Text style={styles.sectionLine}>No positive ingredients.</Text>
         ) : (
           product.positiveIngredients.map((ing: IngredientRisk) => (
             <View key={ing.id} style={styles.ingredientRow}>
@@ -213,13 +208,6 @@ export default function ProductDetailsScreen() {
             </View>
           ))
         )}
-      </View>
-
-      {/* Recommendations */}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommendations</Text>
-        <Text style={styles.sectionLine}>{recommendationText}</Text>
       </View>
     </ScrollView>
   );
