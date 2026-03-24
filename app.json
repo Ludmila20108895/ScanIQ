@@ -7,7 +7,6 @@
     "icon": "./assets/images/Logo.png",
     "scheme": "scaniq",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "supportsTablet": true
     },
@@ -18,8 +17,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
@@ -44,6 +46,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "844cc4ce-5c1d-4bfd-9fb0-b5c11eb75bb2"
+      }
+    },
+    "owner": "ludmila20108895",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/844cc4ce-5c1d-4bfd-9fb0-b5c11eb75bb2"
     }
   }
 }
