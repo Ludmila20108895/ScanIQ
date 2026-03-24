@@ -44,6 +44,9 @@ export default function RecommendationsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Recommendations</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.listContainer}>
         {recommended.map((item) => (
           <View key={item.id} style={styles.pairRow}>
