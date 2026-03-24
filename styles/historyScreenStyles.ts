@@ -39,4 +39,48 @@ export const historyStyles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: { color: "#6b7280", fontSize: 16 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  selectedRow: {
+    backgroundColor: "#d1fae5",
+  },
+
+  deleteBar: {
+    backgroundColor: "#ef4444",
+    padding: 16,
+    alignItems: "center",
+  },
+
+  deleteText: {
+    color: "white",
+    fontWeight: "700",
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#9ca3af",
+    marginLeft: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: "#ef4444",
+  },
 });
