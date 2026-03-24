@@ -36,9 +36,7 @@ export async function addToHistory(
     };
     const updatedHistory = [newItem, ...filteredHistory];
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
-  } catch (error) {
-    console.error("Failed to add to history:", error);
-  }
+  } catch {}
 }
 
 export async function removeFromHistory(id: string): Promise<void> {
@@ -46,17 +44,13 @@ export async function removeFromHistory(id: string): Promise<void> {
     const currentHistory = await getHistory();
     const updatedHistory = currentHistory.filter((h) => h.id !== id);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
-  } catch (error) {
-    console.error("Failed to remove from history:", error);
-  }
+  } catch {}
 }
 
 export async function clearHistory(): Promise<void> {
   try {
     await AsyncStorage.removeItem(HISTORY_KEY);
-  } catch (error) {
-    console.error("Failed to clear history:", error);
-  }
+  } catch {}
 }
 
 export async function getHistoryItemById(
@@ -64,4 +58,10 @@ export async function getHistoryItemById(
 ): Promise<HistoryItem | null> {
   const history = await getHistory();
   return history.find((h) => h.id === id) ?? null;
+}
+export async function deleteHistoryItems(ids: string[]) {
+  const current = await getHistory();
+  const updated = current.filter((item) => !ids.includes(item.id));
+
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
 }
