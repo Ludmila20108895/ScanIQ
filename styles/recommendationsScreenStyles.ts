@@ -83,4 +83,15 @@ export const recommendationsStyles = StyleSheet.create({
     color: "#6b7280",
     fontSize: 16,
   },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+  },
 });
